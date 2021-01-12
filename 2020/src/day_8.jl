@@ -32,25 +32,33 @@ end
 # need to find all the nodes that will reach the n+1th instruction and all the
 # ones that are reachable from the first
 
+ptr_offset(inst, n) = inst == :jmp ? n : 1
+
 function part_2(input)
     code = parse_input.(input)
 
-    # a from × to matrix of edges
-    edges = falses(length(code), length(code)+1)
+    backedges = Dict{Int,Vector{Int}}()
 
     for (ptr, inst) in enumerate(code)
         next_ptr = ptr + ptr_offset(inst...)
-        if next_ptr <= size(edges, 2)
-            edges[ptr, next_ptr] = true
-        end
+        push!(get!(backedges, next_ptr, Int[]), ptr)
     end
 
-    colors = zeros(Int, length(code))
-
-    ptr = 1
-    while colors[ptr] == 0
-        colors[ptr] = 1
-        ptr = 
-    edges
+    reachable = Set{Int}()
+    frontier = [length(code)+1]
+    while !isempty(frontier)
+        @show current = pop!(frontier)
+        push!(reachable, current)
+        @show backedges[current]
+        for next in backedges[current]
+            if next ∉ reachable
+                push!(frontier, next)
+            end
+        end
+    end
+    
 end
 part_2(input)
+
+
+
