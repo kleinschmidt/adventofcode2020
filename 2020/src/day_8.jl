@@ -32,11 +32,9 @@ end
 # need to find all the nodes that will reach the n+1th instruction and all the
 # ones that are reachable from the first
 
-ptr_offset(inst, n) = inst == :jmp ? n : 1
+ptr_offset_alt(inst, n) = inst == :nop ? n : 1
 
-function part_2(input)
-    code = parse_input.(input)
-
+function find_backedges(code)
     backedges = Dict{Int,Vector{Int}}()
 
     for (ptr, inst) in enumerate(code)
@@ -44,21 +42,48 @@ function part_2(input)
         push!(get!(backedges, next_ptr, Int[]), ptr)
     end
 
+    return backedges
+end
+
+function reachable(from, backedges)
     reachable = Set{Int}()
-    frontier = [length(code)+1]
+    frontier = [from]
     while !isempty(frontier)
         @show current = pop!(frontier)
         push!(reachable, current)
-        @show backedges[current]
-        for next in backedges[current]
+        @show get(backedges, current, ())
+        for next in get(backedges, current, ())
             if next ∉ reachable
                 push!(frontier, next)
             end
         end
     end
-    
+
+    return reachable
+end
+
+function part_2(input)
+    code = parse_input.(input)
+    terminal = length(code)+1
+
+    backedges = find_backedges(code)
+    dests = reachable(terminal, backedges)
+
+    ptr, acc, switched = 1, 0, false
+    while ptr != terminal
+        @show ptr, acc, code[ptr]
+        inst, n = code[ptr]
+        acc += acc_offset(inst, n)
+        ptr_alt = ptr + ptr_offset_alt(inst, n)
+        if !switched && ptr_alt ∈ dests
+            @show ptr_alt
+            switched = true
+            ptr = ptr_alt
+        else
+            ptr += ptr_offset(inst, n)
+        end
+    end
+    return acc
 end
 part_2(input)
-
-
 
